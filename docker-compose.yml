@@ -1,12 +1,30 @@
 services:
-  # Serviço da sua aplicação FastAPI
   app:
-    build: . # Constrói a imagem a partir do Dockerfile na raiz do projeto
-    container_name: api # Nome do container
+    build: .
+    container_name: api
     ports:
-      - "8000:8000" # Mapeia a porta 8000 do host para a porta 8000 do container
-                    # (conforme definido no seu Dockerfile com EXPOSE 8000 e CMD)
+      - "8000:8000"
     volumes:
-      - .:/app # Monta o diretório atual (onde está seu código) em /app dentro do container.
-               # Isso é ótimo para desenvolvimento, pois as alterações no código
-               # são refletidas automaticamente no container devido ao --reload do uvicorn.
+      - .:/app
+    # Adiciona variáveis de ambiente para a aplicação se conectar ao banco
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+    # Garante que o serviço 'db' inicie antes do serviço 'app'
+    depends_on:
+      - db
+
+  # Novo serviço para o banco de dados PostgreSQL
+  db:
+    image: postgres:15-alpine # Usar uma imagem oficial e leve
+    container_name: postgres_db
+    # Variáveis de ambiente para configurar o PostgreSQL
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/ # Volume para persistir os dados
+
+# Define o volume nomeado para persistência dos dados do banco
+volumes:
+  postgres_data:
